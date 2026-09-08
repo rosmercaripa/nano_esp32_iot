@@ -1,5 +1,6 @@
 /* ==========================================================================
    LÓGICA JAVASCRIPT: MQTT (FLESPI WSS) + CANVAS + CONTROL DE LED BIDIRECCIONAL
+   (Con filtro anti-parpadeo / ACK de paquetes en tránsito)
    ========================================================================== */
 
 // --- CONFIGURACIÓN POR DEFECTO Y PERSISTENCIA (localStorage) ---
@@ -61,6 +62,10 @@ let currentLedState = false;
 let packetCount = 0;
 let minTemp = null;
 let maxTemp = null;
+
+// Protección contra paquetes desfasados en tránsito (evita parpadeo On -> Off -> On)
+let pendingLedCommandTime = 0;
+const LED_CMD_IGNORE_WINDOW_MS = 1500;
 
 // --- CONFIGURACIÓN DE GRÁFICA EN CANVAS ---
 const canvas = document.getElementById('tempChart');
@@ -205,6 +210,11 @@ function sendToggleLedCommand() {
   }
 
   const targetState = !currentLedState;
+  
+  // Registramos el momento del clic para ignorar paquetes desfasados
+  pendingLedCommandTime = Date.now();
+  applyLedVisualState(targetState);
+
   const payload = JSON.stringify({
     cmd: "toggle_led",
     led: targetState,
@@ -218,8 +228,6 @@ function sendToggleLedCommand() {
       alert('Error al enviar el comando MQTT al Arduino.');
     } else {
       console.log(`[MQTT Comandos] Comando enviado a ${config.commandTopic}: ${payload}`);
-      // Optimistic UI update (se confirmará con el reporte del Arduino)
-      applyLedVisualState(targetState);
     }
   });
 }
@@ -359,9 +367,16 @@ function handleTelemetryData(data) {
     elRawVal.textContent = data.raw;
   }
 
-  // 4. Estado de LED reportado por el Arduino
+  // 4. Estado de LED reportado por el Arduino (con filtro anti-parpadeo)
   if (typeof data.led !== 'undefined') {
-    applyLedVisualState(Boolean(data.led));
+    const reportedState = Boolean(data.led);
+    const timeSinceLastCommand = Date.now() - pendingLedCommandTime;
+
+    // Si acabamos de enviar un comando hace menos de 1.5s, solo aceptamos la telemetría
+    // si ya coincide con el estado deseado o si pasó la ventana de espera.
+    if (timeSinceLastCommand > LED_CMD_IGNORE_WINDOW_MS || reportedState === currentLedState) {
+      applyLedVisualState(reportedState);
+    }
   }
 
   // 5. Uptime del Arduino
