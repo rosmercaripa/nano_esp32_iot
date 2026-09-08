@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Monitor - Arduino Nano ESP32 | Flespi Cloud</title>
+  
+  <meta name="description" content="Dashboard IoT en tiempo real para Arduino Nano ESP32 con MQTT vía Flespi y GitHub Pages">
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Librería MQTT.js cargada desde CDN oficial con soporte para WebSockets Seguros (WSS) -->
+  <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- CABECERA PRINCIPAL -->
+    <header>
+      <div class="brand">
+        <div class="brand-title">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"></path>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <circle cx="12" cy="20" r="1.5"></circle>
+          </svg>
+          IoT Cloud Monitor
+        </div>
+        <div class="brand-subtitle">Arduino Nano ESP32 &bull; Flespi MQTT Broker &bull; GitHub Pages</div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Indicador de conexión MQTT en vivo -->
+        <div id="status-badge" class="status-badge">
+          <div class="status-indicator"></div>
+          <span id="status-text">Conectando...</span>
+        </div>
+
+        <!-- Botón para abrir configuración del broker -->
+        <button id="btn-open-settings" class="btn-icon" title="Configurar Flespi Token y Topics">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          Ajustes
+        </button>
+      </div>
+    </header>
+
+    <!-- BANNER DE AVISO (Si aún no se ha colocado el token) -->
+    <div id="alert-banner" class="alert-banner" style="display: none;">
+      <div>
+        <strong>🔑 Token de Flespi Requerido:</strong> Para recibir datos de tu Arduino, necesitas configurar tu Token de Flespi.
+      </div>
+      <a onclick="openSettings()">Ingresar Token</a>
+    </div>
+
+    <!-- CUADRÍCULA DE TARJETAS PRINCIPALES -->
+    <div class="metrics-grid">
+
+      <!-- TARJETA 1: TEMPERATURA CALCULADA -->
+      <div class="card">
+        <div class="card-label">Temperatura Calculada</div>
+        <div class="card-value val-temp">
+          <span id="temp-val">--.-</span><span class="unit">&deg;C</span>
+        </div>
+        <div class="card-bar-bg">
+          <div id="temp-bar" class="card-bar-fill bar-temp"></div>
+        </div>
+        <div class="card-subtext">Rango escalado: 0.0 &deg;C a 100.0 &deg;C</div>
+      </div>
+
+      <!-- TARJETA 2: VOLTAJE EN PIN A0 -->
+      <div class="card">
+        <div class="card-label">Voltaje Medido (Pin A0)</div>
+        <div class="card-value val-volt">
+          <span id="volt-val">-.--</span><span class="unit">V</span>
+        </div>
+        <div class="card-bar-bg">
+          <div id="volt-bar" class="card-bar-fill bar-volt"></div>
+        </div>
+        <div class="card-subtext">Sensor analógico: 0.00 V a 3.00 V</div>
+      </div>
+
+      <!-- TARJETA 3: LECTURA DIGITAL CRUDA ADC -->
+      <div class="card">
+        <div class="card-label">Lectura Cruda ADC (12-bit)</div>
+        <div class="card-value val-raw">
+          <span id="raw-val">----</span><span class="unit">/ 4095</span>
+        </div>
+        <div style="margin-top: 1rem;"></div>
+        <div class="card-subtext">ESP32-S3 eFuse Calibration Activa</div>
+      </div>
+
+      <!-- TARJETA 4: CONTROL Y ESTADO DE LED (BIDIRECCIONAL) -->
+      <div class="card card-led">
+        <div class="card-label">Estado de LED &bull; Bidireccional</div>
+        
+        <!-- Indicador visual tipo bombilla LED que cambia de color y brillo -->
+        <div class="led-visual-wrapper">
+          <div id="virtual-led" class="virtual-led" title="Indicador de estado real del LED"></div>
+          <div id="led-state-text" class="led-state-text">APAGADO</div>
+        </div>
+
+        <!-- Botón para alternar el LED vía MQTT -->
+        <button id="btn-toggle-led" class="btn-toggle-led" title="Enviar comando MQTT para alternar el LED">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2a1 1 0 0 1 1 1v10a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zM6.34 5.34a1 1 0 0 1 1.41 0 1 1 0 0 1 0 1.42A8 8 0 1 0 16.24 6.76a1 1 0 1 1 1.42-1.42A10 10 0 1 1 6.34 5.34z"/>
+          </svg>
+          Encender LED
+        </button>
+
+        <!-- Selector de color para personalizar la iluminación del LED virtual -->
+        <div class="led-color-picker" title="Elegir color del LED en la interfaz">
+          <div class="color-dot selected" data-color="#10b981" style="background: #10b981;"></div>
+          <div class="color-dot" data-color="#06b6d4" style="background: #06b6d4;"></div>
+          <div class="color-dot" data-color="#f59e0b" style="background: #f59e0b;"></div>
+          <div class="color-dot" data-color="#a855f7" style="background: #a855f7;"></div>
+          <div class="color-dot" data-color="#ef4444" style="background: #ef4444;"></div>
+        </div>
+
+        <div id="led-sync-time" class="card-subtext" style="margin-top: 0.6rem;">Pulsador físico (D2) o Web</div>
+      </div>
+
+    </div>
+
+    <!-- GRÁFICA EN VIVO DE HISTORIAL -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="card-label" style="margin: 0;">Historial de Temperatura en Vivo</div>
+        <div class="chart-stats">
+          <span class="stat-item">Mín: <strong id="stat-min-temp">--.- °C</strong></span>
+          <span class="stat-item">Máx: <strong id="stat-max-temp">--.- °C</strong></span>
+        </div>
+      </div>
+      <canvas id="tempChart"></canvas>
+    </div>
+
+    <!-- METADATOS Y DIAGNÓSTICO EN TIEMPO REAL -->
+    <div class="telemetry-meta">
+      <div class="meta-box">
+        Muestras Recibidas
+        <span id="stat-packets">0</span>
+      </div>
+      <div class="meta-box">
+        Última Telemetría
+        <span id="stat-last-time">Esperando datos</span>
+      </div>
+      <div class="meta-box">
+        Tiempo Encendido (ESP32)
+        <span id="stat-uptime">0m 0s</span>
+      </div>
+      <div class="meta-box">
+        Broker Cloud
+        <span>mqtt.flespi.io:443</span>
+      </div>
+    </div>
+
+    <!-- PIE DE PÁGINA -->
+    <footer>
+      Comunicación MQTT Segura mediante WebSockets (WSS) &bull; Protocolo MQTT 3.1.1/5.0<br>
+      Compatible 100% con <strong>GitHub Pages (HTTPS)</strong> sin advertencias de contenido mixto.
+    </footer>
+
+  </div>
+
+  <!-- MODAL DE CONFIGURACIÓN DE BROKER -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Configuración MQTT Flespi</h2>
+        <button id="btn-close-settings" class="btn-close">&times;</button>
+      </div>
+
+      <form id="form-settings">
+        <div class="form-group">
+          <label for="input-token">Flespi Token:</label>
+          <input type="password" id="input-token" placeholder="Ej: FlespiToken XXXXXXXXX..." required autocomplete="off">
+          <small>El token se guarda únicamente en tu navegador (localStorage). No se sube al repositorio público de GitHub.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="input-topic-tel">Topic de Telemetría (Suscripción):</label>
+          <input type="text" id="input-topic-tel" value="devices/nano_esp32/telemetry" required>
+          <small>Topic donde el Arduino publica los datos JSON periódicamente.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="input-topic-cmd">Topic de Comandos (Publicación):</label>
+          <input type="text" id="input-topic-cmd" value="devices/nano_esp32/cmd" required>
+          <small>Topic al que la web envía órdenes para alternar el LED.</small>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeSettings()">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar y Conectar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LÓGICA DE APLICACIÓN -->
+  <script src="app.js"></script>
+</body>
+</html>

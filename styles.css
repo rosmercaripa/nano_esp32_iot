@@ -1,0 +1,598 @@
+/* ==========================================================================
+   HOJA DE ESTILOS: IoT Cloud Monitor (Arduino Nano ESP32 + Flespi + GH Pages)
+   ========================================================================== */
+
+:root {
+  --bg-main: #0a0e17;
+  --bg-card: #121927;
+  --bg-card-hover: #182235;
+  --border-color: #1e293b;
+  --border-focus: #38bdf8;
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+  
+  --cyan: #38bdf8;
+  --orange: #f97316;
+  --purple: #a855f7;
+  --green: #10b981;
+  --red: #ef4444;
+  --amber: #f59e0b;
+
+  --led-off-bg: #1e293b;
+  --led-off-border: #334155;
+  --led-on-bg: #10b981;
+  --led-on-glow: rgba(16, 185, 129, 0.6);
+
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+}
+
+.container {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* -------------------------------------------------------------
+   CABECERA PRINCIPAL
+   ------------------------------------------------------------- */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.brand-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--cyan);
+}
+
+.brand-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Badge de Estado MQTT */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  transition: all 0.3s ease;
+}
+
+.status-badge.connected .status-indicator {
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+}
+
+.status-badge.connecting .status-indicator {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+  animation: pulse-indicator 1.2s infinite ease-in-out;
+}
+
+@keyframes pulse-indicator {
+  0%, 100% { opacity: 0.4; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* Botón de Ajustes */
+.btn-icon {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* -------------------------------------------------------------
+   BANNER DE AVISO (Si falta el token)
+   ------------------------------------------------------------- */
+.alert-banner {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #fde68a;
+  padding: 0.85rem 1.2rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.alert-banner a {
+  color: var(--cyan);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------
+   CUADRÍCULA DE TARJETAS PRINCIPALES (GRID)
+   ------------------------------------------------------------- */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.card:hover {
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.card-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.card-value {
+  font-size: 2.7rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0.25rem 0;
+  letter-spacing: -0.03em;
+}
+
+.card-value .unit {
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-left: 0.25rem;
+}
+
+.val-temp { color: var(--orange); }
+.val-volt { color: var(--cyan); }
+.val-raw  { color: var(--purple); }
+
+.card-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #1e293b;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.75rem 0 0.5rem 0;
+}
+
+.card-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.25s ease-out;
+}
+
+.bar-temp { background: linear-gradient(90deg, #38bdf8, #f97316, #ef4444); }
+.bar-volt { background: var(--cyan); }
+
+.card-subtext {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: auto;
+}
+
+/* -------------------------------------------------------------
+   TARJETA ESPECIAL: CONTROL BIDIRECCIONAL DE LED
+   ------------------------------------------------------------- */
+.card-led {
+  grid-column: span 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Indicador LED Virtual con efecto Neón */
+.led-visual-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0.75rem 0;
+}
+
+.virtual-led {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--led-off-bg);
+  border: 3px solid var(--led-off-border);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.6);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Brillo superior en el cristal del LED */
+.virtual-led::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 12px;
+  width: 14px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(-30deg);
+}
+
+/* Estado ENCENDIDO (ON) */
+.virtual-led.active {
+  background: var(--green);
+  border-color: #a7f3d0;
+  box-shadow: 
+    0 0 20px var(--led-on-glow),
+    0 0 40px var(--led-on-glow),
+    inset 0 0 8px rgba(255, 255, 255, 0.7);
+  animation: led-glow-pulse 2s infinite ease-in-out;
+}
+
+@keyframes led-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 15px var(--led-on-glow), 0 0 30px var(--led-on-glow);
+  }
+  50% {
+    box-shadow: 0 0 25px var(--led-on-glow), 0 0 50px var(--led-on-glow);
+  }
+}
+
+.led-state-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  transition: color 0.3s ease;
+}
+
+.led-state-text.active {
+  color: var(--green);
+}
+
+/* Botón interactivo para alternar el LED */
+.btn-toggle-led {
+  width: 100%;
+  margin-top: 0.75rem;
+  padding: 0.65rem 1rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border-color);
+  background: #1e293b;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-led:hover {
+  background: #273549;
+  border-color: var(--cyan);
+}
+
+.btn-toggle-led:active {
+  transform: scale(0.98);
+}
+
+.btn-toggle-led.active {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--green);
+  color: #34d399;
+}
+
+/* Selector de color para el LED virtual */
+.led-color-picker {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.15s ease;
+}
+
+.color-dot:hover {
+  transform: scale(1.2);
+}
+
+.color-dot.selected {
+  border-color: #ffffff;
+}
+
+/* -------------------------------------------------------------
+   CONTENEDOR DE LA GRÁFICA EN VIVO
+   ------------------------------------------------------------- */
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.chart-stats {
+  display: flex;
+  gap: 1.25rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.stat-item strong {
+  color: var(--text-main);
+}
+
+canvas {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+/* -------------------------------------------------------------
+   INFORMACIÓN DE ESTADÍSTICAS Y TELEMETRÍA (FOOTER STATS)
+   ------------------------------------------------------------- */
+.telemetry-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(18, 25, 39, 0.6);
+  border: 1px solid var(--border-color);
+  border-radius: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.meta-box span {
+  display: block;
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0.2rem;
+  font-family: var(--font-mono);
+}
+
+/* -------------------------------------------------------------
+   MODAL DE CONFIGURACIÓN DE BROKER
+   ------------------------------------------------------------- */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: #151d2e;
+  border: 1px solid var(--border-color);
+  border-radius: 1rem;
+  width: 100%;
+  max-width: 520px;
+  padding: 1.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.modal-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: 1.1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.5rem;
+  background: #0d131f;
+  border: 1px solid var(--border-color);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus {
+  border-color: var(--cyan);
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.btn-primary {
+  background: var(--cyan);
+  color: #090d16;
+  font-weight: 700;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+/* -------------------------------------------------------------
+   FOOTER
+   ------------------------------------------------------------- */
+footer {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  margin-top: auto;
+  padding-top: 1.5rem;
+  line-height: 1.6;
+}
+
+footer a {
+  color: var(--cyan);
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
