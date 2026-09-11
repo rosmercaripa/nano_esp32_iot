@@ -38,13 +38,3 @@ Este proyecto implementa una arquitectura IoT profesional en la nube para el **A
 
 ---
 
-## 🚀 Paso a Paso de Implementación
-
-### Paso 1: Obtener tu Token Gratuito de Flespi
-
-1. Abre tu navegador e ingresa a **[flespi.com](https://flespi.com/)** o **[flespi.io](https://flespi.io/)**.
-2. Regístrate o inicia sesión con tu cuenta de Google o GitHub (la cuenta gratuita es permanente y más que suficiente).
-3. En el menú lateral izquierdo, haz clic en el ícono de **Tokens** (forma de llave 🔑) o en tu perfil.
-4. Encontrarás un token predeterminado o puedes crear uno nuevo:
-   - Haz clic en el botón de copiar para obtener tu token (tiene un formato parecido a: `FlespiToken 7xK89s...` o una cadena alfanumérica larga).
-5. **Guarda este token**; lo necesitarás en el código de Arduino y en el Dashboard Web.
